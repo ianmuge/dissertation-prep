@@ -25,7 +25,9 @@ class Perceptron:
                 self.weights+=self.rate*(label-pred)*inputs
                 prediction.append(pred)
             diff=(labels-prediction)
-            print("epoch: "+ str(epoch) +"\tdifference:"+str(diff) +"\tweights:"+str(sum(self.weights))+"\tBias:"+str(self.bias))
+            mse=np.sum(diff**2)
+            print(mse)
+            print("epoch: "+ str(epoch) +"\tdifference:"+str(mse) +"\tweights:"+str(sum(self.weights))+"\tBias:"+str(self.bias))
             epoch += 1
 
 train_data=np.array([

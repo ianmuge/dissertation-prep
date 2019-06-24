@@ -112,8 +112,8 @@ test_data=[
 n_inputs = len(dataset[0]) - 1
 n_outputs = len(set([row[-1] for row in dataset]))
 
-network = MLP(n_inputs, 6, n_outputs)
-network.train_network(network.network, dataset, 0.4, 200, n_outputs)
+network = MLP(n_inputs, 3, n_outputs)
+network.train_network(network.network, dataset, 0.1, 300, n_outputs)
 for layer in network.network:
     print(layer)
 for row in dataset:
