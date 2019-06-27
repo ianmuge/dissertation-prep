@@ -1,9 +1,8 @@
 import numpy as np
 import time
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from random import seed
 from random import random
-
 class MLP:
     # Initialize a network
     def __init__(self,n_inputs, n_hidden, n_outputs):
@@ -13,6 +12,7 @@ class MLP:
         output_layer = [{'weights': [random() for i in range(n_hidden + 1)]} for i in range(n_outputs)]
         network.append(output_layer)
         self.network=network
+        self.error,self.epoch=[],[]
 
     # Calculate neuron activation for an input
     def activate(self,weights, inputs):
@@ -25,6 +25,10 @@ class MLP:
     def transfer(self,activation):
         return 1.0 / (1.0 + np.exp(-activation))
 
+        # Calculate the derivative of an neuron output
+    def transfer_derivative(self, output):
+        return output * (1.0 - output)
+
     # Forward propagate input to a network output
     def forward_propagate(self,network, row):
         inputs = row
@@ -36,10 +40,6 @@ class MLP:
                 new_inputs.append(neuron['output'])
             inputs = new_inputs
         return inputs
-
-    # Calculate the derivative of an neuron output
-    def transfer_derivative(self,output):
-        return output * (1.0 - output)
 
     # Backpropagate error and store in neurons
     def backward_propagate_error(self,network, expected):
@@ -83,43 +83,14 @@ class MLP:
                 self.backward_propagate_error(network, expected)
                 self.update_weights(network, row, l_rate)
             print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, l_rate, sum_error))
+            self.error.append(sum_error)
+            self.epoch.append(epoch)
+        plt.plot(self.epoch,self.error)
+        plt.ylabel('Error')
+        plt.xlabel('Epochs')
+        plt.title("Error Function")
+        plt.show()
 
     def predict(self,network, row):
         outputs = self.forward_propagate(network, row)
         return outputs.index(max(outputs))
-
-tic=time.time()
-dataset=[
-    [0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1],
-    [0,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,1,1,0,1],
-    [0,0,1,0,0,0,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1],
-    [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,1],
-    [0,1,1,1,0,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,0,1,1,1,0,0],
-    [0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,0,0,1,0,0,0],
-    [0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,0,1,0,1,0,0,1,1,1,0,0],
-    [0,0,1,1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,1,0,0,1,1,0,0,0]
-]
-
-test_data=[
-    [0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1],
-    [0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
-    [0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,0,1,1,1,0,0],
-    [1,1,1,1,1,1,0,0,0,1,1,0,1,0,1,1,0,0,0,1,1,1,1,1,1,0]
-]
-
-
-
-n_inputs = len(dataset[0]) - 1
-n_outputs = len(set([row[-1] for row in dataset]))
-
-network = MLP(n_inputs, 3, n_outputs)
-network.train_network(network.network, dataset, 0.1, 300, n_outputs)
-for layer in network.network:
-    print(layer)
-for row in dataset:
-    prediction = network.predict(network.network, row)
-    print('Expected=%d, Got=%d' % (row[-1], prediction))
-for row in test_data:
-    prediction = network.predict(network.network, row)
-    print('Expected=%d, Got=%d' % (row[-1], prediction))
-print(str(time.time() - tic) + ' s')

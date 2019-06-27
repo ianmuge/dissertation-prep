@@ -26,7 +26,7 @@ class Eigenfaces:
                     test_label.append(i)
         return train_data,train_label,test_data,test_label
     def img_vector(self,img):
-        img=resize(io.imread(img),(2576,1)).flatten()
+        img=resize(io.imread(img),(10304,1)).flatten()
         return img
 
     def subvector(self,target_matrix, target_vector):
