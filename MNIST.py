@@ -1,23 +1,17 @@
 from comet_ml import Experiment
 # Add the following code anywhere in your machine learning file
-experiment = Experiment(api_key="rqDYIkwKDvdj9pKIGT1MWZTpX",
-                        project_name="dissertation-prep",
-                        workspace="imuge")
+experiment = Experiment()
 
-import pandas as pd
-import numpy as np
 from mlxtend.data import loadlocal_mnist
 import matplotlib.pyplot as plt
 import time
 from sklearn.neural_network import MLPClassifier
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor
 from sklearn.metrics import accuracy_score,classification_report,confusion_matrix
 
 def plot_digit(X, y, idx):
     img = X[idx].reshape(28,28)
     plt.imshow(img, cmap='Greys',  interpolation='nearest')
-    plt.annotate(y[idx], xy=(0.05, 0.85), xycoords="axes fraction", color="red", fontsize=23)
+    plt.annotate(y[idx], xy=(0.05, 0.85), xycoords="axes fraction", color="blue", fontsize=23)
     # plt.title('true label: %d' % y[idx])
     plt.show()
 
@@ -58,8 +52,9 @@ print(classification_report(test_labels,test_pred ))
 print(accuracy_score(test_labels, test_pred))
 print(confusion_matrix(test_labels, test_pred))
 
-experiment.log_metric("train_accuracy", mlp.score(train_images, train_labels))
-experiment.log_metric("test_accuracy", mlp.score(test_images, test_labels))
+
+# experiment.log_metric("train_accuracy", mlp.score(train_images, train_labels))
+# experiment.log_metric("test_accuracy", mlp.score(test_images, test_labels))
 
 # plt.figure()
 # plt.imshow(confusion_matrix(test_labels, test_pred), cmap='hot', interpolation='nearest')
