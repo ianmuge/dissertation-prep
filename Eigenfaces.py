@@ -1,21 +1,21 @@
 import numpy as np
-import pandas as pd
-import pprint
 from skimage.transform import resize
 from skimage import io
 import matplotlib.pyplot as plt
 
+
 class Eigenfaces:
     def __init__(self,img_repo):
         self.img_repo=img_repo
+
     def load_images(self):
         train_data=[]
         train_label=[]
         test_data=[]
         test_label=[]
         train_num=5
-        for i in np.linspace(1, 40, 40):  # 40 sample people
-            for j in np.linspace(1, 10, 10):  # everyone has 10 different face
+        for i in np.linspace(1, 40, 40):
+            for j in np.linspace(1, 10, 10):
                 filename = self.img_repo + '/s' + str(i.astype(np.int8)) + '/' + str(j.astype(np.int8)) + '.pgm'
                 imvector=self.img_vector(filename)
                 if j <= train_num:
@@ -25,6 +25,18 @@ class Eigenfaces:
                     test_data.append(imvector)
                     test_label.append(i)
         return train_data,train_label,test_data,test_label
+    def plot_imgs(self):
+        fig, axs = plt.subplots(40,10)
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        for i in range(40):
+            for j in range(10):
+                filename = self.img_repo + 's' + str(i+1) + '/' + str(j+1) + '.pgm'
+                axs[i,j].imshow(plt.imread(filename), cmap='gray')
+                axs[i,j].axis('off')
+        plt.tight_layout()
+        plt.axis('off')
+        plt.show()
+
     def img_vector(self,img):
         img=resize(io.imread(img),(10304,1)).flatten()
         return img
@@ -33,6 +45,7 @@ class Eigenfaces:
         vector4matrix = np.repeat(target_vector, target_matrix.shape[0], axis=0)
         target_matrix = target_matrix - vector4matrix
         return target_matrix
+
     def submean(self,data,test):
         data=np.array(data)
         test=np.array(test)
@@ -40,11 +53,14 @@ class Eigenfaces:
         train_data = self.subvector(data, mean_data)
         test_data = self.subvector(test, mean_data)
         return train_data,test_data
+
     def cov_mat(self,data):
         cov = np.dot(data.T, data)
         l, v = np.linalg.eig(cov)
         return l,v
+
 eg=Eigenfaces(img_repo="./data/faces/")
+eg.plot_imgs()
 train_data,train_label,test_data,test_label=eg.load_images()
 train_data,test_data=eg.submean(train_data,test_data)
 
@@ -77,4 +93,3 @@ for i in range(r * c):
     plt.imshow(train_v[:, i].real.reshape(int(112 * 0.5), int(92 * 0.5)), cmap='gray')
     plt.axis('off')
 plt.show()
-

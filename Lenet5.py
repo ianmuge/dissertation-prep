@@ -9,12 +9,15 @@ from keras import models, layers
 from keras.datasets import mnist
 from keras.utils import np_utils
 import numpy as np
-import tensorflow as tf
 
-config = tf.ConfigProto()
-config.intra_op_parallelism_threads = 10
-config.inter_op_parallelism_threads = 10
-tf.Session(config=config)
+from keras import backend as K
+import tensorflow as tf
+NUM_PARALLEL_EXEC_UNITS = 4
+config = tf.ConfigProto(intra_op_parallelism_threads=NUM_PARALLEL_EXEC_UNITS, inter_op_parallelism_threads=2,
+                       allow_soft_placement=True, device_count={'CPU': NUM_PARALLEL_EXEC_UNITS})
+session = tf.Session(config=config)
+K.set_session(session)
+
 
 def plot_digit(X, y, idx):
     img = X[idx].reshape(28,28)
@@ -52,14 +55,14 @@ model = models.Sequential()
 #
 # #Layer 1
 # #Conv Layer 1
-model.add(layers.Conv2D(filters = 6,kernel_size=(5, 5), strides=(1, 1),activation = 'relu',input_shape = (28,28,1)))
+model.add(layers.Conv2D(filters = 6,kernel_size=(5, 5), strides=1,activation = 'relu',input_shape = (28,28,1)))
 # #Pooling layer 1
-model.add(layers.MaxPooling2D(pool_size = 2, strides = 2, padding='valid'))
+model.add(layers.AveragePooling2D(pool_size = 2, strides = 2, padding='valid'))
 # #Layer 2
 # #Conv Layer 2
-model.add(layers.Conv2D(filters = 16,kernel_size=(5, 5), strides=(1, 1),activation = 'relu',input_shape = (14,14,6)))
+model.add(layers.Conv2D(filters = 16,kernel_size=(5, 5), strides=1,activation = 'relu',input_shape = (14,14,6)))
 # #Pooling Layer 2
-model.add(layers.MaxPooling2D(pool_size = 2, strides = 2))
+model.add(layers.AveragePooling2D(pool_size = 2, strides = 2))
 #
 # # # C5 Fully Connected Convolutional Layer
 # model.add(layers.Conv2D(120, kernel_size=(5, 5), strides=(1, 1), activation='tanh', padding='valid'))
