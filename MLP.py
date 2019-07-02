@@ -3,46 +3,163 @@ import numpy as np
 from numba import jit
 import matplotlib.pyplot as plt
 from random import random
+import keras
+from tqdm import trange
 
 
-class MLP:
-    def __init__(self,epochs,n_input,n_hidden,n_output,batch_size=100,learn_rate=0.5):
-        self.epochs = epochs
-        self.learn_rate = learn_rate
-        self.n_input=n_input
-        self.n_hidden=n_hidden
-        self.n_output=n_output
-        self.batch_size=batch_size
+class Layer:
+    def __init__(self):
+        pass
 
-    def transfer_sig(self,x):
-        return 1 / (1 + np.exp(-x))
+    def forward(self, input):
+        return input
 
-    def transfer_der_sig(self,x):
-        return x * (1 - x)
+    def backward(self, input, grad_output):
+        num_units = input.shape[1]
+        d_layer_d_input = np.eye(num_units)
+        return np.dot(grad_output, d_layer_d_input)
 
-    def transfer_relu(self,x):
-        x[x < 0] = 0
-        return x
 
-    def transfer_der_relu(self,x):
-        x[x < 0] = 0
-        x[x > 0] = 1
-        return x
+class ReLU(Layer):
+    def __init__(self):
+        pass
 
-    @jit(nopython=True, parallel=True)
-    def feed_forward(self):
+    def forward(self, input):
+        relu_forward = np.maximum(0, input)
+        return relu_forward
 
-    @jit(nopython=True, parallel=True)
-    def back_propagate(self):
+    def backward(self, input, grad_output):
+        relu_grad = input > 0
+        return grad_output * relu_grad
 
-    def loss(self,y_true, y_pred):
-        return np.mean((y_pred - y_true) ** 2)
 
-    @jit(nopython=True, parallel=True)
-    def train(self):
-        for i in range(self.epochs):
-            for j in range(x.shape[0] // self.batch_size):
+class Sigmoid(Layer):
+    def __init__(self):
+        pass
 
-mlp=MLP(epochs=10,learn_rate=0.3,
-        n_input=784,n_hidden=(10,50,10),
-        n_output=10,batch_size=100)
+    def forward(self, input):
+        return 1 / (1 + np.exp(-input))
+
+    def backward(self, input, grad_output):
+        return input * (1 - input)
+
+
+class Dense(Layer):
+    def __init__(self, input_units, output_units, learning_rate=0.1):
+        self.learning_rate = learning_rate
+        self.weights = np.random.normal(loc=0.0,
+                                        scale=np.sqrt(2 / (input_units + output_units)),
+                                        size=(input_units, output_units))
+        self.biases = np.zeros(output_units)
+
+    def forward(self, input):
+        return np.dot(input, self.weights) + self.biases
+
+    def backward(self, input, grad_output):
+        grad_input = np.dot(grad_output, self.weights.T)
+        grad_weights = np.dot(input.T, grad_output)
+        grad_biases = grad_output.mean(axis=0) * input.shape[0]
+
+        assert grad_weights.shape == self.weights.shape and grad_biases.shape == self.biases.shape
+        self.weights = self.weights - self.learning_rate * grad_weights
+        self.biases = self.biases - self.learning_rate * grad_biases
+
+        return grad_input
+
+def softmax_crossentropy_with_logits(logits, reference_answers):
+    logits_for_answers = logits[np.arange(len(logits)), reference_answers]
+    xentropy = - logits_for_answers + np.log(np.sum(np.exp(logits), axis=-1))
+    return xentropy
+
+def grad_softmax_crossentropy_with_logits(logits, reference_answers):
+    ones_for_answers = np.zeros_like(logits)
+    ones_for_answers[np.arange(len(logits)), reference_answers] = 1
+    softmax = np.exp(logits) / np.exp(logits).sum(axis=-1, keepdims=True)
+    return (- ones_for_answers + softmax) / logits.shape[0]
+def load_dataset(subset=(6000,4000)):
+    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+
+    x_train = x_train.astype(float) / 255
+    x_test = x_test.astype(float) / 255
+
+    x_train = x_train.reshape([x_train.shape[0], -1])
+    x_test = x_test.reshape([x_test.shape[0], -1])
+
+    x_train=x_train[:subset[0]]
+    y_train=y_train[:subset[0]]
+    x_test=x_test[:subset[1]]
+    y_test=y_test[:subset[1]]
+
+    return x_train,y_train,x_test,y_test
+
+x_train,y_train,x_test,y_test = load_dataset()
+
+# plt.figure(figsize=[6,6])
+# for i in range(4):
+#     plt.subplot(2,2,i+1)
+#     plt.title("Label: %i"%y_train[i])
+#     plt.imshow(x_train[i].reshape([28,28]),cmap='gray')
+# plt.show()
+
+network = []
+network.append(Dense(x_train.shape[1],100))
+network.append(ReLU())
+network.append(Dense(100,200))
+network.append(ReLU())
+network.append(Dense(200,len(set(y_train))))
+
+
+def forward(network, X):
+    activations = []
+    input = X
+    # Looping through each layer
+    for l in network:
+        activations.append(l.forward(input))
+        # Updating input to last layer output
+        input = activations[-1]
+    assert len(activations) == len(network)
+    return activations
+
+
+def predict(network, X):
+    logits = forward(network, X)[-1]
+    return logits.argmax(axis=-1)
+
+def train(network, X, y):
+    layer_activations = forward(network, X)
+    layer_inputs = [X] + layer_activations
+    logits = layer_activations[-1]
+
+    # Compute the loss and the initial gradient
+    loss = softmax_crossentropy_with_logits(logits, y)
+    loss_grad = grad_softmax_crossentropy_with_logits(logits, y)
+
+    for layer_index in range(len(network))[::-1]:
+        layer = network[layer_index]
+        loss_grad = layer.backward(layer_inputs[layer_index], loss_grad)
+    return np.mean(loss)
+
+def iterate_minibatches(inputs, targets, batchsize):
+    assert len(inputs) == len(targets)
+    for start_idx in trange(0, len(inputs) - batchsize + 1, batchsize):
+        excerpt = slice(start_idx, start_idx + batchsize)
+        yield inputs[excerpt], targets[excerpt]
+
+train_log = []
+val_log = []
+for epoch in range(25):
+
+    for x_batch, y_batch in iterate_minibatches(x_train, y_train, batchsize=32):
+        train(network, x_batch, y_batch)
+
+    train_log.append(np.mean(predict(network, x_train) == y_train))
+    val_log.append(np.mean(predict(network, x_test) == y_test))
+
+    print("Epoch", epoch)
+    print("Train accuracy:", train_log[-1])
+    print("Val accuracy:", val_log[-1])
+    plt.plot(train_log, label='train accuracy')
+    plt.plot(val_log, label='val accuracy')
+    plt.legend(loc='best')
+    plt.grid()
+    plt.show()
