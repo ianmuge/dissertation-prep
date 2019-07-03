@@ -5,18 +5,51 @@ from comet_ml import Experiment
 import winsound
 import keras
 import time
-import MLP
+from MLP import *
+import numpy as np
+import matplotlib.pyplot as plt
+import keras
+from tqdm import trange
 
 tic=time.time()
-(train_images,train_labels),(test_images,test_labels)=keras.datasets.mnist.load_data()
-train_images=train_images.reshape((train_images.shape[0],train_images.shape[1]*train_images.shape[1])).astype(float)
-test_images=test_images.reshape((test_images.shape[0],test_images.shape[1]*test_images.shape[1])).astype(float)
-train_images /=255
-test_images /=255
+mlp=MLP()
+(train_data, train_label), (test_data, test_label) = keras.datasets.mnist.load_data()
+x_train,y_train,x_test,y_test = mlp.load_dataset(train_data, train_label,test_data, test_label)
 
-# dataset=np.array(list(zip(test_images[0:2000],test_labels[0:2000])))
-# test_data=np.array(list(zip(test_images[2000:2500],test_labels[2000:2500])))
+# plt.figure(figsize=[6,6])
+# for i in range(4):
+#     plt.subplot(2,2,i+1)
+#     plt.title("Label: %i"%y_train[i])
+#     plt.imshow(x_train[i].reshape([28,28]),cmap='gray')
+# plt.show()
+
+network = []
+network.append(Dense(x_train.shape[1],100))
+network.append(ReLU())
+network.append(Dense(100,200))
+network.append(ReLU())
+network.append(Dense(200,len(set(y_train))))
+
+
+train_log = []
+val_log = []
+for epoch in range(25):
+
+    for x_batch, y_batch in mlp.iterate_minibatches(x_train, y_train, batchsize=50):
+        mlp.train(network, x_batch, y_batch)
+
+    train_log.append(np.mean(mlp.predict(network, x_train) == y_train))
+    val_log.append(np.mean(mlp.predict(network, x_test) == y_test))
+
+    print("Epoch", epoch)
+    print("Train accuracy:", train_log[-1])
+    print("Val accuracy:", val_log[-1])
+
+plt.plot(train_log, label='train accuracy')
+plt.plot(val_log, label='val accuracy')
+plt.legend(loc='best')
+plt.grid()
+plt.show()
 
 print(str(time.time() - tic) + ' s')
 winsound.Beep(500,1000)
-

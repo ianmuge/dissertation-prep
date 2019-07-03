@@ -1,8 +1,6 @@
 import winsound
 import numpy as np
 from numba import jit
-import matplotlib.pyplot as plt
-from random import random
 import keras
 from tqdm import trange
 
@@ -41,7 +39,7 @@ class Sigmoid(Layer):
         return 1 / (1 + np.exp(-input))
 
     def backward(self, input, grad_output):
-        return input * (1 - input)
+        return grad_output*input * (1 - input)
 
 
 class Dense(Layer):
@@ -66,100 +64,73 @@ class Dense(Layer):
 
         return grad_input
 
-def softmax_crossentropy_with_logits(logits, reference_answers):
-    logits_for_answers = logits[np.arange(len(logits)), reference_answers]
-    xentropy = - logits_for_answers + np.log(np.sum(np.exp(logits), axis=-1))
-    return xentropy
 
-def grad_softmax_crossentropy_with_logits(logits, reference_answers):
-    ones_for_answers = np.zeros_like(logits)
-    ones_for_answers[np.arange(len(logits)), reference_answers] = 1
-    softmax = np.exp(logits) / np.exp(logits).sum(axis=-1, keepdims=True)
-    return (- ones_for_answers + softmax) / logits.shape[0]
-def load_dataset(subset=(6000,4000)):
-    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+class MLP:
+    def __init__(self):
+        pass
 
-    x_train = x_train.astype(float) / 255
-    x_test = x_test.astype(float) / 255
+    def softmax_crossentropy_with_logits(self,logits, reference_answers):
+        logits_for_answers = logits[np.arange(len(logits)), reference_answers]
+        xentropy = - logits_for_answers + np.log(np.sum(np.exp(logits), axis=-1))
+        return xentropy
 
-    x_train = x_train.reshape([x_train.shape[0], -1])
-    x_test = x_test.reshape([x_test.shape[0], -1])
+    def grad_softmax_crossentropy_with_logits(self,logits, reference_answers):
+        ones_for_answers = np.zeros_like(logits)
+        ones_for_answers[np.arange(len(logits)), reference_answers] = 1
+        softmax = np.exp(logits) / np.exp(logits).sum(axis=-1, keepdims=True)
+        return (- ones_for_answers + softmax) / logits.shape[0]
 
-    x_train=x_train[:subset[0]]
-    y_train=y_train[:subset[0]]
-    x_test=x_test[:subset[1]]
-    y_test=y_test[:subset[1]]
+    def load_dataset(self, x_train, y_train, x_test, y_test , subset=(6000, 4000)):
+        # (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
-    return x_train,y_train,x_test,y_test
+        x_train = x_train.astype(float) / 255
+        x_test = x_test.astype(float) / 255
 
-x_train,y_train,x_test,y_test = load_dataset()
+        x_train = x_train.reshape([x_train.shape[0], -1])
 
-# plt.figure(figsize=[6,6])
-# for i in range(4):
-#     plt.subplot(2,2,i+1)
-#     plt.title("Label: %i"%y_train[i])
-#     plt.imshow(x_train[i].reshape([28,28]),cmap='gray')
-# plt.show()
-
-network = []
-network.append(Dense(x_train.shape[1],100))
-network.append(ReLU())
-network.append(Dense(100,200))
-network.append(ReLU())
-network.append(Dense(200,len(set(y_train))))
+        x_test = x_test.reshape([x_test.shape[0], -1])
 
 
-def forward(network, X):
-    activations = []
-    input = X
-    # Looping through each layer
-    for l in network:
-        activations.append(l.forward(input))
-        # Updating input to last layer output
-        input = activations[-1]
-    assert len(activations) == len(network)
-    return activations
+        x_train = x_train[:subset[0]]
+        y_train = y_train[:subset[0]]
+        x_test = x_test[:subset[1]]
+        y_test = y_test[:subset[1]]
 
+        return x_train, y_train, x_test, y_test
 
-def predict(network, X):
-    logits = forward(network, X)[-1]
-    return logits.argmax(axis=-1)
+    def forward(self,network, X):
+        activations = []
+        input = X
+        # Looping through each layer
+        for l in network:
+            activations.append(l.forward(input))
+            # Updating input to last layer output
+            input = activations[-1]
+        assert len(activations) == len(network)
+        return activations
 
-def train(network, X, y):
-    layer_activations = forward(network, X)
-    layer_inputs = [X] + layer_activations
-    logits = layer_activations[-1]
+    def predict(self,network, X):
+        logits = self.forward(network, X)[-1]
+        return logits.argmax(axis=-1)
 
-    # Compute the loss and the initial gradient
-    loss = softmax_crossentropy_with_logits(logits, y)
-    loss_grad = grad_softmax_crossentropy_with_logits(logits, y)
+    def train(self,network, X, y):
+        layer_activations = self.forward(network, X)
+        layer_inputs = [X] + layer_activations
+        logits = layer_activations[-1]
 
-    for layer_index in range(len(network))[::-1]:
-        layer = network[layer_index]
-        loss_grad = layer.backward(layer_inputs[layer_index], loss_grad)
-    return np.mean(loss)
+        # Compute the loss and the initial gradient
+        loss = self.softmax_crossentropy_with_logits(logits, y)
+        loss_grad = self.grad_softmax_crossentropy_with_logits(logits, y)
 
-def iterate_minibatches(inputs, targets, batchsize):
-    assert len(inputs) == len(targets)
-    for start_idx in trange(0, len(inputs) - batchsize + 1, batchsize):
-        excerpt = slice(start_idx, start_idx + batchsize)
-        yield inputs[excerpt], targets[excerpt]
+        for layer_index in range(len(network))[::-1]:
+            layer = network[layer_index]
+            loss_grad = layer.backward(layer_inputs[layer_index], loss_grad)
+        return np.mean(loss)
 
-train_log = []
-val_log = []
-for epoch in range(25):
+    def iterate_minibatches(self, inputs, targets, batchsize):
+        assert len(inputs) == len(targets)
+        indices = np.random.permutation(len(inputs))
+        for start_idx in trange(0, len(inputs) - batchsize + 1, batchsize):
+            excerpt = indices[start_idx:start_idx + batchsize]
+            yield inputs[excerpt], targets[excerpt]
 
-    for x_batch, y_batch in iterate_minibatches(x_train, y_train, batchsize=32):
-        train(network, x_batch, y_batch)
-
-    train_log.append(np.mean(predict(network, x_train) == y_train))
-    val_log.append(np.mean(predict(network, x_test) == y_test))
-
-    print("Epoch", epoch)
-    print("Train accuracy:", train_log[-1])
-    print("Val accuracy:", val_log[-1])
-    plt.plot(train_log, label='train accuracy')
-    plt.plot(val_log, label='val accuracy')
-    plt.legend(loc='best')
-    plt.grid()
-    plt.show()
