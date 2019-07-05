@@ -58,11 +58,6 @@ Fully Connected #2. Input = 120. Output = 84
 Output 10
 """
 
-"""
-suggested activation function is tanh, ReLU observed to have a higher accuracy 
-Test loss 0.0381, accuracy 98.72%
-Completed:244.60259580612183 s
-"""
 
 #
 model = models.Sequential()

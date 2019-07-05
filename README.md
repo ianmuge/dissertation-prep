@@ -37,7 +37,7 @@ Test set score: 0.966400\
 ###Vanilla MLP
 Hidden Layers 3 \
 Epochs 25\
-Train accuracy: 1.0\
+Train accuracy: 0.99\
 Val accuracy: 0.9335\
 Execution time: 26.512019634246826 s
 ##ViolaJones
