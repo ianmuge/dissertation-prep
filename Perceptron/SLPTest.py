@@ -25,7 +25,7 @@ n_inputs = len(dataset[0]) - 1
 n_outputs = len(set([row[-1] for row in dataset]))
 
 network = SLP.SLP(n_inputs, 3, n_outputs)
-network.train_network(network.network, dataset, 0.5, 100, n_outputs)
+network.train_network(network.network, dataset, 0.25, 300, n_outputs)
 # for layer in network.network:
 #     print(layer)
 data_acc_count=0

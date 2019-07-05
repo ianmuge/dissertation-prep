@@ -21,7 +21,7 @@ mlp = MLPClassifier(hidden_layer_sizes=(25,50,25), #(100,),
                     activation='relu', #relu|tanh|logistic|identity
                     max_iter=500, alpha=1e-4,
                     batch_size='auto',
-                    solver='sgd', verbose=10, #ibfgs|sgd|adam
+                    solver='adam', verbose=10, #ibfgs|sgd|adam
                     tol=1e-4, random_state=1,
                     warm_start=True)
 # learning_rate='adaptive',learning_rate_init=0.5) #constant|invscaling|adaptive

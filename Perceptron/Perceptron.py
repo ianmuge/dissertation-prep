@@ -55,6 +55,3 @@ predict_labels=[]
 for x in test_data:
     predict_labels.append(p.predict(x))
 pprint(predict_labels)
-"""
-Performance after convergence, in this case 2 epochs, does not vary. No changes after convergence. Final weight sum is 0. Final Bias is dependent on the learning rate, 0.2
-"""
