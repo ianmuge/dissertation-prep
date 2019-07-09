@@ -4,11 +4,10 @@ import numpy as np
 import time
 
 
-img='./Yolo/data/input/dog.jpg'
 config='./Yolo/data/yolo.cfg'
 weights='./Yolo/data/yolo.weights'
 class_f='./Yolo/data/yolo.txt'
-outputFile='./Yolo/data/test_yolo_out_py.avi'
+outputFile='./Yolo/data/output/test_yolo_out_py.avi'
 
 conf_thresh=0.5
 nms_thresh=0.3
@@ -16,12 +15,10 @@ nms_thresh=0.3
 vs = cv2.VideoCapture(0)
 
 writer = cv2.VideoWriter(outputFile, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,(round(vs.get(cv2.CAP_PROP_FRAME_WIDTH)), round(vs.get(cv2.CAP_PROP_FRAME_HEIGHT))))
-
 classes = None
 with open(class_f, 'r') as f:
     classes = [line.strip() for line in f.readlines()]
 
-# generate different colors for different classes
 np.random.seed(42)
 COLORS = np.random.randint(0, 255, size=(len(classes), 3),dtype="uint8")
 print("[INFO] loading YOLO from disk...")
@@ -43,15 +40,12 @@ while True:
     classIDs = []
 
     for output in layerOutputs:
-
         for detection in output:
-
             scores = detection[5:]
             classID = np.argmax(scores)
             confidence = scores[classID]
 
             if confidence > conf_thresh:
-
                 box = detection[0:4] * np.array([W, H, W, H])
                 (centerX, centerY, width, height) = box.astype("int")
 
@@ -63,9 +57,7 @@ while True:
                 classIDs.append(classID)
     idxs = cv2.dnn.NMSBoxes(boxes, confidences, conf_thresh,nms_thresh)
 
-    # ensure at least one detection exists
     if len(idxs) > 0:
-        # loop over the indexes we are keeping
         for i in idxs.flatten():
             # extract the bounding box coordinates
             (x, y) = (boxes[i][0], boxes[i][1])
