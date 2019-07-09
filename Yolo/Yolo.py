@@ -4,7 +4,7 @@ import numpy as np
 
 
 
-img='./Yolo/data/dog.jpg'
+img='./Yolo/data/input/dog.jpg'
 config='./Yolo/data/yolo.cfg'
 weights='./Yolo/data/yolo.weights'
 class_f='./Yolo/data/yolo.txt'
@@ -44,7 +44,7 @@ def draw_bounding_box(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
     label = str(classes[class_id])
     color = COLORS[class_id]
     cv2.rectangle(img, (x, y), (x_plus_w, y_plus_h), color, 2)
-    cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    cv2.putText(img, (label +' '+str(confidence)), (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 outs = net.forward(get_output_layers(net))
 
@@ -95,7 +95,7 @@ cv2.imshow("object detection", image)
 cv2.waitKey()
 
 # save output image to disk
-cv2.imwrite("./Yolo/data/object-detection.jpg", image)
+cv2.imwrite("./Yolo/data/output/object-detection.jpg", image)
 
 # release resources
 cv2.destroyAllWindows()
