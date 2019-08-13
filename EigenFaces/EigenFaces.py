@@ -44,6 +44,7 @@ def load_images():
 def img_vector(img):
     return resize(io.imread(img),(46,56)).flatten()
 
+
 def subvector(target_matrix, target_vector):
     vector4matrix = np.repeat(target_vector, target_matrix.shape[0], axis=0)
     target_matrix = target_matrix - vector4matrix
@@ -73,16 +74,17 @@ def project (W , X , mu = None ):
         return np.dot (X ,W)
     return np . dot (X - mu , W)
 def reconstruct (W , Y , mu = None ) :
+
     if mu is None :
         return np . dot (Y ,W.T)
     return np . dot (Y , W .T) + mu
 def normalize (X , low , high):
     X = np . asarray (X)
     minX , maxX = np . min (X ) , np . max (X)
-    # normalize to [0...1].
+
     X = X - float ( minX )
     X = X / float (( maxX - minX ) )
-    # scale to [ low ... high ].
+
     X = X * ( high - low )
     X = X + low
     return np.asarray(X,dtype='float')
@@ -95,33 +97,31 @@ def subplot ( title , images , rows , cols , sptitle =" subplot " ,sptitles =[] 
         plt.setp(ax0.get_xticklabels () , visible = False )
         plt.setp(ax0.get_yticklabels () , visible = False )
         if len(sptitles) == len(images):
-            plt.title("%s #%s" % (sptitle, str(sptitles[i])) )
+            plt.title("%s #%s" % (sptitle, str(sptitles[i])))
         else:
             plt.title("%s #%d" % (sptitle, (i + 1)))
         plt.imshow(np.asarray(images[i]),cmap = 'gray')
-    plt . show ()
+    plt.show ()
 
 
-# eg.plot_imgs()
 train_data,train_label,test_data,test_label,full_data,full_label=load_images()
 train_l,train_v,mean=pca(train_data,200)
 E = []
 for i in range (min(len(train_data),20)):
     e = train_v[:,i].reshape((46,56))
     E.append(normalize(e,0,255))
-subplot(title =" Eigenfaces AT&T Facedatabase ", images =E , rows =4 , cols =5 , sptitle ="Eigenface ")
+subplot(title =" Eigenfaces", images =E , rows =5 , cols =4 , sptitle ="")
 
 steps =[ i for i in range (10 , min ( len (train_data) , 320) , 20)]
 E = []
-for i in range ( min ( len ( steps ) , 20) ):
+for i in range(min(len(steps),20)):
     numEvs = steps [i]
     P = project (train_v [: ,0: numEvs ], train_data [0]. reshape (1 ,-1) , mean )
     R = reconstruct (train_v [: ,0: numEvs ], P , mean )
-    # reshape and append to plots
     R = R . reshape ( (46,56))
     E. append ( normalize (R ,0 ,255) )
 
-subplot ( title =" Reconstruction AT&T Facedatabase ", images =E , rows =4 , cols =4 , sptitle ="Eigenvectors ", sptitles = steps)
+subplot ( title ="", images =E , rows =4 , cols =4 , sptitle ="", sptitles = steps)
 #
 train_v = train_v[:,0:int(train_v.shape[1])]
 train_data = np.dot(train_data, train_v)
@@ -146,3 +146,4 @@ for i in range(r * c):
     plt.imshow(train_v[:, i].real.reshape(46, 56), cmap='gray')
     plt.axis('off')
 plt.show()
+

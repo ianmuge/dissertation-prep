@@ -48,6 +48,8 @@ test_images = test_images.astype('float32')/255
 train_labels = np_utils.to_categorical(train_labels, 10)
 test_labels = np_utils.to_categorical(test_labels, 10)
 
+print(np.array(train_labels).shape)
+
 """
 Convolution #1. Input = 32x32x1. Output = 28x28x6 conv2d
 SubSampling #1. Input = 28x28x6. Output = 14x14x6. SubSampling is simply Average Pooling so we use avg_pool
