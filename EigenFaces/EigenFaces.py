@@ -1,10 +1,16 @@
+"""
+Eigenfaces training and analysis code
+"""
+#Setup
 import numpy as np
 from skimage.transform import resize
 from skimage import io
 import matplotlib.pyplot as plt
+import time
+import warnings
+warnings.filterwarnings("ignore")
 
-
-img_repo="./EigenFaces/data/faces/"
+img_repo="/mnt/c/Users/Muge/PycharmProjects/DissertationWorkspace/Preparation/EigenFaces/data/faces/"
 
 def load_images():
     train_data=[]
@@ -90,29 +96,46 @@ def normalize (X , low , high):
     return np.asarray(X,dtype='float')
 
 def subplot ( title , images , rows , cols , sptitle =" subplot " ,sptitles =[] ):
-    fig = plt.figure()
-    fig.text(.5, .95, title, horizontalalignment='center')
+    fig = plt.figure(figsize=(5,5))
+    # fig.text(.5, .95, title, horizontalalignment='center')
+    fig.suptitle(title, fontsize=10)
+    fig.subplots_adjust(hspace=0, wspace=0)
     for i in range(len(images)):
         ax0 = fig.add_subplot ( rows , cols ,(i+1 ))
         plt.setp(ax0.get_xticklabels () , visible = False )
         plt.setp(ax0.get_yticklabels () , visible = False )
+        plt.axis('off')
         if len(sptitles) == len(images):
-            plt.title("%s #%s" % (sptitle, str(sptitles[i])))
+            plt.title("%s #%s" % (sptitle, str(sptitles[i])),fontsize=5)
         else:
-            plt.title("%s #%d" % (sptitle, (i + 1)))
+            plt.title("%s #%d" % (sptitle, (i + 1)),fontsize=5)
         plt.imshow(np.asarray(images[i]),cmap = 'gray')
     plt.show ()
 
+#%%
+#Training
 
 train_data,train_label,test_data,test_label,full_data,full_label=load_images()
-train_l,train_v,mean=pca(train_data,200)
+tic=time.time()
+train_l,train_v,mean=pca(train_data,1000)
+print("Training time:",time.time()-tic)
+#%%
+#Plots
+
+fig=plt.figure()
+plt.title("Mean Face")
+plt.axis('off')
+plt.imshow(np.asarray(normalize(mean.reshape((46,56)),0,255)),cmap = 'gray')
+plt.show()
 E = []
 for i in range (min(len(train_data),20)):
     e = train_v[:,i].reshape((46,56))
     E.append(normalize(e,0,255))
-subplot(title =" Eigenfaces", images =E , rows =5 , cols =4 , sptitle ="")
+subplot(title ="", images =E , rows =5 , cols =4 , sptitle ="")
 
-steps =[ i for i in range (10 , min ( len (train_data) , 320) , 20)]
+#%%
+# steps =[ i for i in range (10 , min ( len (train_data) , 320) , 20)]
+steps =[ i for i in range (0 , 1000 , 50)]
 E = []
 for i in range(min(len(steps),20)):
     numEvs = steps [i]
@@ -121,13 +144,15 @@ for i in range(min(len(steps),20)):
     R = R . reshape ( (46,56))
     E. append ( normalize (R ,0 ,255) )
 
-subplot ( title ="", images =E , rows =4 , cols =4 , sptitle ="", sptitles = steps)
-#
+subplot ( title ="", images =E , rows =4 , cols =5 , sptitle ="", sptitles = steps)
+
+#%%
 train_v = train_v[:,0:int(train_v.shape[1])]
 train_data = np.dot(train_data, train_v)
 test_data = np.dot(test_data , train_v)
 #
 #
+tic=time.time()
 count = 0
 for i in np.linspace(0, test_data.shape[0] - 1, test_data.shape[0]).astype(np.int64):
     sub = subvector(train_data,test_data[i, :].reshape((1,test_data.shape[1])))
@@ -135,15 +160,31 @@ for i in np.linspace(0, test_data.shape[0] - 1, test_data.shape[0]).astype(np.in
     fig = np.argmin(dis)
     if train_label[fig] == test_label[i]:
         count = count + 1
+print("Validation Time:",time.time()-tic)
 correct_rate = count / test_data.shape[0]
 
-print("Correct rate =", correct_rate * 100 , "%")
-#
-plt.figure('Feature Maps')
-r, c = (4, 10)
+print("Accuracy rate:", correct_rate * 100 , "%")
+#%%
+
+
+fig = plt.figure(figsize=(15,15))
+# fig.text(.5, .95, title, horizontalalignment='center')
+fig.suptitle("Feature Maps", fontsize=30)
+fig.subplots_adjust(hspace=0, wspace=0)
+
+r, c = (5, 8)
 for i in range(r * c):
     plt.subplot(r,c,i+1)
     plt.imshow(train_v[:, i].real.reshape(46, 56), cmap='gray')
     plt.axis('off')
 plt.show()
-
+#%%
+"""
+Independent Analysis
+"""
+tic=time.time()
+train_l,train_v,mean=pca(train_data,200)
+print(time.time()-tic)
+tic=time.time()
+train_l_,train_v_,mean_=pca(train_data,600)
+print(time.time()-tic)
