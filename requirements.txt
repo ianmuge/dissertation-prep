@@ -11,7 +11,7 @@ opencv-utils==0.0.2
 pandas==0.24.2
 pandas-profiling==1.4.2
 pandasql==0.7.3
-Pillow==6.0.0
+pillow>=6.2.0
 plotly==3.10.0
 pprint==0.1
 PyYAML==5.1.1
